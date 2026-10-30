@@ -6,28 +6,29 @@
 import { definePluginSettings } from "@api/Settings";
 import { UserAreaButton, UserAreaRenderProps } from "@api/UserArea";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByProps } from "@webpack";
-import { ChannelStore, ContextMenuApi, Menu, React, SelectedChannelStore } from "@webpack/common";
+import { findStoreLazy } from "@webpack";
+import { ChannelStore, ContextMenuApi, MediaEngineStore, Menu, React, SelectedChannelStore } from "@webpack/common";
 
 /* ===========================
- * Store lookups (Found at some point. Not really my fucking problem.)
+ * Store lookups (The gateway socket getter thingy.)
  * =========================== */
 
-let VoiceStateStore, MediaEngineStore, GatewayConnectionStore, SelectedGuildStore;
-
-const safeFind = (...props: string[]) => {
-    try { return findByProps(...props); } catch { return null; }
+const GatewayConnectionStore = findStoreLazy("GatewayConnectionStore") as {
+    getSocket(): {
+        voiceStateUpdate(state: {
+            guildId: string | null;
+            channelId: string;
+            selfMute: boolean;
+            selfDeaf: boolean;
+            selfVideo: boolean;
+        }): void;
+    } | null;
 };
 
-function loadStores() {
-    if (!VoiceStateStore) VoiceStateStore = safeFind("getVoiceChannelId");
-    if (!MediaEngineStore) MediaEngineStore = safeFind("isSelfMute");
-    if (!GatewayConnectionStore) GatewayConnectionStore = safeFind("getSocket");
-    if (!SelectedGuildStore) SelectedGuildStore = safeFind("getLastSelectedGuildId");
-}
+let suspended = false;
 
 /* ===========================
- * Plugin settings (They don't really exist tbh)
+ * Plugin settings (They don't really exist tbh because they're hidden.)
  * =========================== */
 
 const settings = definePluginSettings({
@@ -44,7 +45,7 @@ const settings = definePluginSettings({
         description: "Include fake deafen when active",
         hidden: true
     },
-    // Master toggle?? I'm getting sick of adding comments to my shit.
+    // Master toggle?? I'm getting sick of adding comments to my shit. (as of 10/30/2026, I'm still adding comments.)
     active: {
         type: OptionType.BOOLEAN,
         default: false,
@@ -58,35 +59,22 @@ const settings = definePluginSettings({
  * =========================== */
 
 function triggerGatewayUpdate() {
-    loadStores();
-    if (!VoiceStateStore || !GatewayConnectionStore) return;
-
-    const channelId = VoiceStateStore.getVoiceChannelId();
-    if (!channelId) return;
-
-    const channel = ChannelStore.getChannel(channelId);
-    if (!channel) return;
-
-    let guildId = channel.guild_id;
-    if (!guildId && (channel.type === 2 || channel.type === 13)) {
-        if (SelectedGuildStore) guildId = SelectedGuildStore.getLastSelectedGuildId();
-        if (!guildId) return;
-    }
-
-    const socket = GatewayConnectionStore.getSocket();
-    if (!socket || typeof socket.send !== "function") return;
-
-    const realMute = MediaEngineStore ? MediaEngineStore.isSelfMute() : false;
-    const realDeaf = MediaEngineStore ? MediaEngineStore.isSelfDeaf() : false;
-    const realVideo = MediaEngineStore ? MediaEngineStore.isVideoEnabled() : false;
-
     try {
-        socket.send(4, {
-            guild_id: guildId,
-            channel_id: channelId,
-            self_mute: shouldFakeMute(realMute),
-            self_deaf: shouldFakeDeaf(realDeaf),
-            self_video: realVideo
+        const channelId = SelectedChannelStore.getVoiceChannelId();
+        if (!channelId) return;
+
+        const channel = ChannelStore.getChannel(channelId);
+        if (!channel) return;
+
+        const socket = GatewayConnectionStore.getSocket();
+        if (!socket || typeof socket.voiceStateUpdate !== "function") return;
+
+        socket.voiceStateUpdate({
+            guildId: channel.guild_id ?? null,
+            channelId: channel.id,
+            selfMute: MediaEngineStore.isSelfMute(),
+            selfDeaf: MediaEngineStore.isSelfDeaf(),
+            selfVideo: MediaEngineStore.isVideoEnabled()
         });
     } catch (e) {
         console.error("[FakeMuteDeafen] Send Failed:", e);
@@ -94,11 +82,11 @@ function triggerGatewayUpdate() {
 }
 
 function shouldFakeMute(real: boolean) {
-    return settings.store.active && settings.store.fakeMuteEnabled ? true : real;
+    return !suspended && settings.store.active && settings.store.fakeMuteEnabled ? true : real;
 }
 
 function shouldFakeDeaf(real: boolean) {
-    return settings.store.active && settings.store.fakeDeafEnabled ? true : real;
+    return !suspended && settings.store.active && settings.store.fakeDeafEnabled ? true : real;
 }
 
 /* ===========================
@@ -254,16 +242,29 @@ export default definePlugin({
         {
             find: "}voiceStateUpdate(",
             replacement: {
-                match: /self_mute:([^,]+),self_deaf:([^,]+)/,
-                replace: "self_mute:$self.shouldFakeMute($1),self_deaf:$self.shouldFakeDeaf($2)"
+                match: /self_mute:([^,]+),self_deaf:([^,]+),self_video:([^,]+)/,
+                replace: "self_mute:$self.shouldFakeMute($1),self_deaf:$self.shouldFakeDeaf($2),self_video:$3"
+            }
+        },
+        {
+            find: ".merge({selfMute:",
+            replacement: {
+                match: /\i\.sessionId===\i(?=\?)/,
+                replace: "$&&&!$self.shouldShowFakeVoiceState()"
             }
         }
     ],
 
     shouldFakeMute,
     shouldFakeDeaf,
+    shouldShowFakeVoiceState: () => !suspended && settings.store.active,
 
     start() {
-        loadStores();
+        suspended = false;
+    },
+
+    stop() {
+        suspended = true;
+        triggerGatewayUpdate();
     }
 });

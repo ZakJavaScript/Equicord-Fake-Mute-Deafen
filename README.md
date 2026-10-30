@@ -33,11 +33,11 @@ pnpm install --frozen-lockfile
 
 Use `pnpm`, not `npm` or `yarn`. The full walkthrough is in the Equicord docs under [Building from Source](https://docs.equicord.org/installing/#building-from-source).
 
-### 2. Add the plugin
+### 2. Install the plugin
 
 Create a `src/userplugins` folder in the checkout if it doesn't exist, then put this plugin in a `FakeMuteDeafen` subfolder so the file ends up at `src/userplugins/FakeMuteDeafen/index.tsx`. `index.tsx` is the only file you need. See [Installing Custom Plugins](https://docs.equicord.org/installing/custom-plugin/) for more on how userplugins work.
 
-### 3. Build and load it
+### 3. Build and inject it
 
 Build Equicord with the plugin included:
 

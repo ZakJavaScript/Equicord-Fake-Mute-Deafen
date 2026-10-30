@@ -35,7 +35,9 @@ Use `pnpm`, not `npm` or `yarn`. The full walkthrough is in the Equicord docs un
 
 ### 2. Install the plugin
 
-Create a `src/userplugins` folder in the checkout if it doesn't exist, then put this plugin in a `FakeMuteDeafen` subfolder so the file ends up at `src/userplugins/FakeMuteDeafen/index.tsx`. `index.tsx` is the only file you need. See [Installing Custom Plugins](https://docs.equicord.org/installing/custom-plugin/) for more on how userplugins work.
+Download the `FakeMuteDeafen.zip` from the [latest release](https://github.com/ZakJavaScript/Equicord-Fake-Mute-Deafen/releases/latest).
+
+Create a `src/userplugins` folder in the checkout if it doesn't exist, then extract the zip into it so the file ends up at `src/userplugins/FakeMuteDeafen/index.tsx`.
 
 ### 3. Build and inject it
 

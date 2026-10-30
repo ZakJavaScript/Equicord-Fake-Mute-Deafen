@@ -95,6 +95,16 @@ Turning the button or an option on or off asks Discord to send a fresh voice sta
 | [**The Equicord team and contributors**](https://github.com/Equicord/Equicord/graphs/contributors) | [Equicord](https://github.com/Equicord/Equicord), the client mod this plugin runs on, plus [Equilotl](https://github.com/Equicord/Equilotl), [Equibop](https://github.com/Equicord/Equibop) and the [documentation](https://docs.equicord.org/). |
 | [**Vendicated and the Vencord contributors**](https://github.com/Vendicated/Vencord/graphs/contributors) | [Vencord](https://github.com/Vendicated/Vencord), the project Equicord is forked from, and the plugin API this plugin uses. |
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=zakjavascript%2Fequicord-fake-mute-deafen&type=timeline&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=zakjavascript/equicord-fake-mute-deafen&type=timeline&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=zakjavascript/equicord-fake-mute-deafen&type=timeline&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=zakjavascript/equicord-fake-mute-deafen&type=timeline&legend=bottom-right" />
+ </picture>
+</a>
+
 ## License
 
 [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html), matching the header in `index.tsx`.
